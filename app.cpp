@@ -5,7 +5,6 @@
 #include <cstring>
 #include <dirent.h>
 
-
 int numberOfVideo;
 int *processIDs;
 
@@ -18,7 +17,7 @@ struct Video
 /**
  * @param filename the file name
  * @return pointer to the extension or null if something wrong with the name
-*/
+ */
 char *getFileExtension(char *filename)
 {
     char *dot = strrchr(filename, '.');
@@ -31,7 +30,8 @@ void waitForVideoProcess()
 {
     int status;
     int id = wait(&status);
-    if(WIFEXITED(status)) {
+    if (WIFEXITED(status))
+    {
         if (id < 1)
             return;
         for (int i = 0; i < numberOfVideo; i++)
@@ -40,7 +40,7 @@ void waitForVideoProcess()
             {
                 processIDs[i] = -1;
                 int statusCode = WEXITSTATUS(status);
-                if(statusCode == 0)
+                if (statusCode == 0)
                     std::cout << "process " << videos[i].title << " is done" << std::endl;
                 else
                     std::cout << "process " << videos[i].title << " failed with " << statusCode << " FFMPEG status code" << std::endl;
@@ -67,7 +67,8 @@ int main(int argc, char *argv[])
         return 2;
     }
     // check if video is mp4 of avi
-    if(strcmp(getFileExtension(argv[1]),"mp4") != 0 && strcmp(getFileExtension(argv[1]), "avi") != 0) {
+    if (strcmp(getFileExtension(argv[1]), "mp4") != 0 && strcmp(getFileExtension(argv[1]), "avi") != 0)
+    {
         std::cout << "video file should be mp4 or avi file" << std::endl;
         return 3;
     }
@@ -78,7 +79,8 @@ int main(int argc, char *argv[])
         return 4;
     }
     // check if content file is txt
-    if(getFileExtension(argv[2]) == nullptr || strcmp(getFileExtension(argv[2]),"txt") != 0) {
+    if (getFileExtension(argv[2]) == nullptr || strcmp(getFileExtension(argv[2]), "txt") != 0)
+    {
         std::cout << "content file should be txt file" << std::endl;
         return 5;
     }
@@ -205,9 +207,11 @@ int main(int argc, char *argv[])
         }
 
         // create FFMPEG process
-        FFMPEGProcesses++;
-        processIDs[i] = fork();
-        if (processIDs[i] == 0)
+        if ((processIDs[i] = fork()) < 0)
+        {
+            std::cout << "unable to create FFMPEG process for " << videos[i].title << std::endl;
+        }
+        else if (processIDs[i] == 0)
         {
             // make output path
             char *output = new char[255];
@@ -229,8 +233,13 @@ int main(int argc, char *argv[])
             // if last part
             else
                 execlp("ffmpeg", "ffmpeg", "-ss", videos[i].timestamp, "-i", argv[1], "-c", "copy", strcat(argv[3], videos[i].title), nullptr);
+            std::cout << "unable to run FFMPEG command" << std::endl;
             delete[] output;
             return 0;
+        }
+        else
+        {
+            FFMPEGProcesses++;
         }
     }
 
